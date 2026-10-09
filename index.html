@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AI 购物助手委托研究</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,600&family=Noto+Serif+SC:wght@600;700&family=Noto+Sans+SC:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* 布局：单栏研究简报。标题与关键数字 → 研究设计（3×2 矩阵）→ 结果（图 + 假设表）→ 产品启示 → 方法 */
+:root{
+  --ground:#f3f6f8; --surface:#ffffff; --ink:#15222c; --ink2:#3d4c57; --muted:#5d6d79; --faint:#87969f;
+  --rule:#d5dde3; --rule-soft:#e5eaee; --accent:#0072b2; --accent-wash:#e5f0f8; --null:#7a868f; --null-wash:#eceff1;
+  --serif:'Noto Serif SC','Songti SC',serif; --latin:'Newsreader',Georgia,serif;
+  --sans:'Noto Sans SC','PingFang SC','Microsoft YaHei',system-ui,sans-serif; --mono:'IBM Plex Mono',Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ground:#0f171e; --surface:#162029; --ink:#e3eaef; --ink2:#c2ccd3; --muted:#9aaab5; --faint:#74848e;
+  --rule:#2a3742; --rule-soft:#1f2a33; --accent:#58a9dc; --accent-wash:#14304a; --null:#8b98a1; --null-wash:#1d262e; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --ground:#0f171e; --surface:#162029; --ink:#e3eaef; --ink2:#c2ccd3; --muted:#9aaab5; --faint:#74848e;
+  --rule:#2a3742; --rule-soft:#1f2a33; --accent:#58a9dc; --accent-wash:#14304a; --null:#8b98a1; --null-wash:#1d262e; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--ground);color:var(--ink);font-family:var(--sans);font-size:15.5px;line-height:1.75;-webkit-font-smoothing:antialiased}
+.wrap{max-width:860px;margin:0 auto;padding-inline:16px;padding-block:52px 80px;display:flex;flex-direction:column;gap:56px}
+h1,h2,h3{margin:0;text-wrap:balance}
+p{margin:0}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+header{display:flex;flex-direction:column;gap:16px}
+header h1{font-family:var(--serif);font-size:clamp(28px,5vw,40px);line-height:1.3}
+header .en{font-family:var(--latin);font-size:17px;color:var(--muted);font-style:italic}
+header .lede{font-size:17px;color:var(--ink2);max-width:62ch}
+.facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);margin-top:6px}
+@media (max-width:640px){.facts{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.fact{padding:14px 16px 14px 0;display:flex;flex-direction:column;gap:2px}
+.fact+.fact{padding-left:16px;border-left:1px solid var(--rule-soft)}
+@media (max-width:640px){.fact:nth-child(3){border-left:0;padding-left:0}.fact:nth-child(n+3){border-top:1px solid var(--rule-soft)}}
+.fact dt{font-size:12px;color:var(--faint)}
+.fact dd{margin:0;font-family:var(--mono);font-size:17px;font-variant-numeric:tabular-nums}
+
+section{display:flex;flex-direction:column;gap:18px}
+.sh{display:flex;flex-direction:column;gap:6px;border-bottom:1px solid var(--rule);padding-bottom:12px}
+.sh h2{font-family:var(--serif);font-size:23px}
+.sh p{color:var(--muted);font-size:14px;max-width:64ch}
+
+/* 3×2 design matrix */
+.matrix{display:grid;grid-template-columns:120px repeat(3,minmax(0,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule);border-radius:8px;overflow:hidden}
+.matrix>div{background:var(--surface);padding:12px 14px;min-width:0;font-size:14px}
+.matrix .hd{background:var(--accent-wash);font-weight:600;font-size:13px}
+.matrix .rowhd{font-weight:600;font-size:13px}
+.matrix .corner{background:var(--surface);font-size:12px;color:var(--faint)}
+.matrix small{display:block;color:var(--muted);font-size:12px;font-weight:400}
+@media (max-width:600px){.matrix{grid-template-columns:90px repeat(3,minmax(0,1fr))}.matrix>div{padding:10px 8px;font-size:12.5px}}
+.design-note{font-size:14px;color:var(--ink2);max-width:66ch}
+
+/* chart */
+figure{margin:0;display:flex;flex-direction:column;gap:10px;background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:18px 18px 14px}
+.chart-wrap{overflow-x:auto}
+.chart{display:block;width:100%;min-width:520px;height:auto}
+.c-axis{stroke:var(--rule);stroke-width:1;fill:none}
+.c-mid{stroke:var(--faint);stroke-width:1;stroke-dasharray:3 4;fill:none}
+.c-link{stroke:var(--rule);stroke-width:1.5;fill:none}
+.c-dot{fill:var(--surface);stroke:var(--accent);stroke-width:2.5}
+.c-val{fill:var(--accent);font-family:var(--mono);font-size:13px}
+.c-lab{fill:var(--ink);font-family:var(--sans);font-size:13px}
+.c-tick{fill:var(--faint);font-family:var(--mono);font-size:11px}
+.c-note{fill:var(--faint);font-family:var(--sans);font-size:11.5px}
+figcaption{font-size:13px;color:var(--muted)}
+
+/* table */
+.tablewrap{overflow-x:auto;background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:6px 16px}
+table{width:100%;border-collapse:collapse;font-size:14px;min-width:560px}
+th{text-align:left;font-weight:500;font-size:12px;color:var(--faint);padding:10px 12px 8px 0;border-bottom:1px solid var(--rule)}
+td{padding:11px 12px 11px 0;border-bottom:1px solid var(--rule-soft);vertical-align:top}
+tr:last-child td{border-bottom:0}
+td.stat{font-family:var(--mono);font-size:12.5px;color:var(--muted);white-space:nowrap}
+.v{display:inline-block;font-size:12px;padding:1px 9px;border-radius:3px;white-space:nowrap;font-weight:500}
+.v.yes{background:var(--accent-wash);color:var(--accent)}
+.v.no{background:var(--null-wash);color:var(--null)}
+
+/* implications */
+.imps{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media (max-width:620px){.imps{grid-template-columns:1fr}}
+.imp{background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:16px 18px;display:flex;flex-direction:column;gap:8px}
+.imp h3{font-size:16px}
+.imp p{font-size:14px;color:var(--ink2)}
+.imp .ev{font-family:var(--mono);font-size:11.5px;color:var(--faint)}
+.voice{background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:16px 18px}
+.voice h3{font-size:15px;margin-bottom:10px}
+.bars{display:flex;flex-direction:column;gap:8px}
+.bar{display:grid;grid-template-columns:150px minmax(0,1fr) 52px;gap:10px;align-items:center;font-size:13.5px}
+@media (max-width:520px){.bar{grid-template-columns:110px minmax(0,1fr) 46px}}
+.bar .track{height:8px;background:var(--rule-soft);border-radius:4px;overflow:hidden}
+.bar .track i{display:block;height:100%;background:var(--accent);border-radius:4px}
+.bar b{font-family:var(--mono);font-weight:500;text-align:right;font-variant-numeric:tabular-nums}
+
+.methods{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule);border-radius:8px;overflow:hidden}
+.methods div{background:var(--surface);padding:14px 16px;display:flex;flex-direction:column;gap:2px}
+.methods b{font-size:14px}
+.methods span{font-size:13px;color:var(--muted)}
+footer{font-size:12.5px;color:var(--faint);border-top:1px solid var(--rule);padding-top:16px;line-height:1.8}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">AI 用户研究 · 伦敦国王学院硕士学位论文</div>
+  <h1>消费者愿意把多少购买决策交给 AI 购物助手</h1>
+  <div class="en">Between Research and Purchase: Consumer Adoption Barriers to AI Shopping Assistants in Chinese E-Commerce</div>
+  <p class="lede">AI 购物助手正在从“帮你推荐”走向“替你下单”。这项研究用一个情景实验回答两个问题：自主度每提高一档，用户的接受度如何变化；在电商平台内还是在通用 AI 助手里遇到它，是否会影响接受度。实验条件取自两款真实产品：淘宝内嵌的 AI 购物助手和千问通用助手。</p>
+  <dl class="facts">
+    <div class="fact"><dt>有效样本</dt><dd>N = 267</dd></div>
+    <div class="fact"><dt>实验设计</dt><dd>3 × 2 组间</dd></div>
+    <div class="fact"><dt>自主度主效应</dt><dd>η²ₚ = .357</dd></div>
+    <div class="fact"><dt>量表信度</dt><dd>α .876–.942</dd></div>
+  </dl>
+</header>
+
+<section>
+  <div class="sh"><h2>研究设计</h2><p>两个因素交叉，形成 6 个实验条件，每位受访者随机看到其中一种情景。</p></div>
+  <div class="matrix" role="table" aria-label="3 乘 2 实验条件">
+    <div class="corner" role="cell">入口 \ 委托程度</div>
+    <div class="hd" role="columnheader">低 · 仅推荐<small>AI 给出商品建议</small></div>
+    <div class="hd" role="columnheader">中 · 代备单<small>AI 加购，用户确认支付</small></div>
+    <div class="hd" role="columnheader">高 · 全自动<small>预算内 AI 直接下单</small></div>
+    <div class="rowhd" role="rowheader">淘宝内嵌 AI 助手</div><div role="cell">条件 1</div><div role="cell">条件 2</div><div role="cell">条件 3</div>
+    <div class="rowhd" role="rowheader">千问通用助手</div><div role="cell">条件 4</div><div role="cell">条件 5</div><div role="cell">条件 6</div>
+  </div>
+  <p class="design-note">两款产品同属阿里巴巴，公司身份在设计中被控制住，所以“入口”的影响可以和“品牌”的影响分开来看。实验同时测量了感知风险和信任，用来检验自主度通过哪条路径影响采纳意愿。</p>
+</section>
+
+<section>
+  <div class="sh"><h2>主要发现</h2><p>自主度是决定性变量，入口的影响很小。</p></div>
+  <figure>
+    <div class="chart-wrap">
+      <svg class="chart" viewBox="0 0 660 190" role="img" aria-label="采纳意愿随委托程度下降：低委托 5.11，中委托 4.29，高委托 3.27，量表中点为 4.0">
+        <text class="c-note" x="370" y="13" text-anchor="middle">量表中点 4.0</text>
+        <line class="c-mid" x1="370" y1="20" x2="370" y2="138"/>
+        <polyline class="c-link" points="458,46 393,82 311,118"/>
+        <text class="c-lab" x="112" y="51" text-anchor="end">低 · 仅推荐</text>
+        <text class="c-val" x="458" y="33" text-anchor="middle">5.11</text>
+        <circle class="c-dot" cx="458" cy="46" r="7"/>
+        <text class="c-lab" x="112" y="87" text-anchor="end">中 · 代备单</text>
+        <text class="c-val" x="393" y="69" text-anchor="middle">4.29</text>
+        <circle class="c-dot" cx="393" cy="82" r="7"/>
+        <text class="c-lab" x="112" y="123" text-anchor="end">高 · 全自动</text>
+        <text class="c-val" x="311" y="105" text-anchor="middle">3.27</text>
+        <circle class="c-dot" cx="311" cy="118" r="7"/>
+        <line class="c-axis" x1="130" y1="138" x2="610" y2="138"/>
+        <g class="c-axis">
+          <line x1="130" y1="138" x2="130" y2="144"/><line x1="210" y1="138" x2="210" y2="144"/>
+          <line x1="290" y1="138" x2="290" y2="144"/><line x1="370" y1="138" x2="370" y2="144"/>
+          <line x1="450" y1="138" x2="450" y2="144"/><line x1="530" y1="138" x2="530" y2="144"/>
+          <line x1="610" y1="138" x2="610" y2="144"/>
+        </g>
+        <g class="c-tick" text-anchor="middle">
+          <text x="130" y="159">1</text><text x="210" y="159">2</text><text x="290" y="159">3</text>
+          <text x="370" y="159">4</text><text x="450" y="159">5</text><text x="530" y="159">6</text><text x="610" y="159">7</text>
+        </g>
+        <text class="c-note" x="370" y="181" text-anchor="middle">采纳意愿（7 分制，估计边际均值）</text>
+      </svg>
+    </div>
+    <figcaption>自主度每提高一档，采纳意愿下降约 0.8–1.0 分，呈线性衰减，没有在某一档突然断崖（两段降幅之差 p = .236）。</figcaption>
+  </figure>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th style="width:36%">研究假设</th><th style="width:34%">检验结果</th><th>结论</th></tr></thead>
+      <tbody>
+        <tr><td>委托程度越高，采纳意愿越低</td><td class="stat">F(2, 256) = 71.11, p &lt; .001<br>η²ₚ = .357</td><td><span class="v yes">成立</span> 全研究最大效应</td></tr>
+        <tr><td>取消最终确认权会带来断崖式下降</td><td class="stat">二次对比 p = .236</td><td><span class="v no">不成立</span> 线性衰减</td></tr>
+        <tr><td>平台内嵌助手比通用助手更被接受</td><td class="stat">F(1, 256) = 3.53, p = .062<br>差距 0.23 / 7 分</td><td><span class="v no">部分成立</span> 方向一致，量级很小</td></tr>
+        <tr><td>委托程度越高，入口优势越大</td><td class="stat">F(2, 256) = 0.92, p = .401</td><td><span class="v no">不成立</span> 无交互</td></tr>
+        <tr><td>感知风险中介委托程度的影响</td><td class="stat">间接效应 −.270<br>95% CI [−.384, −.175]</td><td><span class="v yes">成立</span> 约占总效应 29%</td></tr>
+        <tr><td>信任中介入口的影响</td><td class="stat">间接效应 −.080<br>95% CI [−.236, .082]</td><td><span class="v no">不成立</span> 区间跨零</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="sh"><h2>对产品的启示</h2><p>把统计结果翻译成 AI 购物助手的设计优先级。</p></div>
+  <div class="imps">
+    <div class="imp"><h3>先降风险，再讲信任</h3><p>自主度的影响通过感知风险传导，而不是通过信任。额度上限、商品白名单、可撤销授权、下单前确认，比品牌背书更直接地提升采纳。</p><span class="ev">风险路径 −.270 显著 · 信任路径不显著</span></div>
+    <div class="imp"><h3>没有可以一次放开的“安全档位”</h3><p>采纳意愿随自主度线性下降，自动化能力适合逐级放开，并让用户随时退回上一档。</p><span class="ev">两段降幅 0.82 / 1.02，差异不显著</span></div>
+    <div class="imp"><h3>通用助手做电商没有先天劣势</h3><p>入口的影响只有 0.23 分；过半数受访者更想要跨平台比价，这正是不绑定单一平台的通用助手能提供的。</p><span class="ev">偏好跨平台比价 53.9% vs 单平台 27.0%</span></div>
+    <div class="imp"><h3>从低客单价、高复购品类切入</h3><p>价格对采纳的影响比品类更大。自动下单先在日常快消和低价商品上开放，高价商品保留“待确认”。</p><span class="ev">低价 4.75 vs 高价 2.95 · 快消 4.56 vs 耐用品 3.52</span></div>
+  </div>
+  <div class="voice">
+    <h3>用户自己说出来的需求（开放题，n = 175）</h3>
+    <div class="bars">
+      <div class="bar"><span>有边界的自主</span><span class="track"><i style="width:83%"></i></span><b>16.6%</b></div>
+      <div class="bar"><span>可解释、中立的推荐</span><span class="track"><i style="width:77%"></i></span><b>15.4%</b></div>
+      <div class="bar"><span>真实比价</span><span class="track"><i style="width:68.5%"></i></span><b>13.7%</b></div>
+      <div class="bar"><span>可回滚、有人负责</span><span class="track"><i style="width:63%"></i></span><b>12.6%</b></div>
+      <div class="bar"><span>下单前确认</span><span class="track"><i style="width:60%"></i></span><b>12.0%</b></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="sh"><h2>研究方法</h2></div>
+  <div class="methods">
+    <div><b>情景实验</b><span>3 × 2 组间设计，Qualtrics 问卷，随机分配条件</span></div>
+    <div><b>数据质量</b><span>有效样本 267 份，操纵检验通过率 86.1%</span></div>
+    <div><b>协方差分析</b><span>SPSS Type III ANCOVA，控制教育、年龄、AI 素养、使用经验与既往态度</span></div>
+    <div><b>中介检验</b><span>PROCESS Model 4，5,000 次偏差校正自助抽样</span></div>
+  </div>
+</section>
+
+<footer>
+  许丁玥 Dingyue Xu · King's College London, MSc Digital Economy（2026）<br>
+  论文题目：Consumer Adoption Barriers to AI Shopping Assistants in Chinese E-Commerce · 已通过学校伦理审查
+</footer>
+
+</div>
+</body>
+</html>
